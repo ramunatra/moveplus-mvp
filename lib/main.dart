@@ -43,7 +43,7 @@ class _MovePlusHomeState extends State<MovePlusHome> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
-      ),
+      ), // CORRIGIDO: Fechamento correto da AppBar
       body: IndexedStack(
         index: _pagina,
         children: [
@@ -58,7 +58,7 @@ class _MovePlusHomeState extends State<MovePlusHome> {
               });
             },
           ),
-          CorridaPage(),
+          const CorridaPage(),
           HistoricoPage(historico: _historico),
           const PerfilPage(),
         ],
@@ -116,7 +116,7 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _destinoController =
       TextEditingController();
 
-  String _tipoCorrida = 'Econômica';
+  final String _tipoCorrida = 'Econômica';
 
   double _valor = 0;
 
@@ -168,6 +168,45 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  Widget _campoLocal({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: const OutlineInputBorder(),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+    );
+  }
+
+  Widget _opcaoCorrida({
+    required String titulo,
+    required String subtitulo,
+    required double valor,
+    required IconData icone,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        leading: Icon(icone),
+        title: Text(titulo),
+        subtitle: Text(subtitulo),
+        trailing: Text('R\$ ${valor.toStringAsFixed(2)}'),
+        onTap: () {
+          setState(() {
+            _valor = valor;
+          });
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -176,7 +215,6 @@ class _HomePageState extends State<HomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 10),
-
           const Text(
             'Para onde vamos?',
             style: TextStyle(
@@ -184,9 +222,7 @@ class _HomePageState extends State<HomePage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 8),
-
           const Text(
             'Informe os locais da sua viagem.',
             style: TextStyle(
@@ -194,25 +230,19 @@ class _HomePageState extends State<HomePage> {
               color: Colors.grey,
             ),
           ),
-
           const SizedBox(height: 25),
-
           _campoLocal(
             controller: _origemController,
             label: 'Local de partida',
             icon: Icons.my_location,
           ),
-
           const SizedBox(height: 15),
-
           _campoLocal(
             controller: _destinoController,
             label: 'Destino',
             icon: Icons.location_on,
           ),
-
           const SizedBox(height: 25),
-
           const Text(
             'Tipo de corrida',
             style: TextStyle(
@@ -220,40 +250,98 @@ class _HomePageState extends State<HomePage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 12),
-
           _opcaoCorrida(
             titulo: 'Econômica',
             subtitulo: 'Preço mais baixo',
             valor: 18.50,
             icone: Icons.directions_car,
           ),
-
           _opcaoCorrida(
             titulo: 'Conforto',
             subtitulo: 'Mais conforto',
             valor: 25.90,
             icone: Icons.airline_seat_recline_normal,
           ),
-
           _opcaoCorrida(
             titulo: 'Premium',
             subtitulo: 'Experiência diferenciada',
             valor: 34.90,
             icone: Icons.star,
           ),
-
           const SizedBox(height: 20),
-
           if (_valor > 0)
             Card(
               elevation: 0,
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Estimativa
+                    Text(
+                      'Estimativa: R\$ ${_valor.toStringAsFixed(2)}', // CORRIGIDO
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: _solicitarCorrida,
+                      child: const Text('Solicitar'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class CorridaPage extends StatelessWidget {
+  const CorridaPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text('Tela de Corrida Ativa'),
+    );
+  }
+}
+
+class HistoricoPage extends StatelessWidget {
+  final List<String> historico;
+
+  const HistoricoPage({super.key, required this.historico});
+
+  @override
+  Widget build(BuildContext context) {
+    if (historico.isEmpty) {
+      return const Center(
+        child: Text('Nenhuma corrida no histórico.'),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: historico.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          leading: const Icon(Icons.history),
+          title: Text(historico[index]),
+        );
+      },
+    );
+  }
+}
+
+class PerfilPage extends StatelessWidget {
+  const PerfilPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text('Perfil do Usuário'),
+    );
+  }
+}
