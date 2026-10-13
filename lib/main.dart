@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -14,60 +15,89 @@ class MovePlusApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF155EEF),
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF6F8FC),
       ),
-      home: const MovePlusHome(),
+      home: const HomePage(),
     );
   }
 }
 
-class MovePlusHome extends StatefulWidget {
-  const MovePlusHome({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<MovePlusHome> createState() => _MovePlusHomeState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _MovePlusHomeState extends State<MovePlusHome> {
-  int _pagina = 0;
+class _HomePageState extends State<HomePage> {
+  final origemController = TextEditingController();
+  final destinoController = TextEditingController();
 
-  final List<String> _historico = [];
+  String veiculo = 'MovePlus Econômico';
+  String mensagem = '';
+  int pagina = 0;
+
+  @override
+  void dispose() {
+    origemController.dispose();
+    destinoController.dispose();
+    super.dispose();
+  }
+
+  void solicitarCorrida() {
+    if (origemController.text.trim().isEmpty ||
+        destinoController.text.trim().isEmpty) {
+      setState(() {
+        mensagem = 'Informe a origem e o destino.';
+      });
+      return;
+    }
+
+    setState(() {
+      mensagem =
+          'Solicitação demonstrativa criada! '
+          'Ainda não há motorista conectado.';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text(
           'MovePlus',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Color(0xFF155EEF),
+            fontWeight: FontWeight.bold,
+            fontSize: 25,
+          ),
         ),
-        centerTitle: false,
-      ), // CORRIGIDO: Fechamento correto da AppBar
-      body: IndexedStack(
-        index: _pagina,
-        children: [
-          HomePage(
-            onCorridaSolicitada: (origem, destino, valor) {
+        actions: [
+          IconButton(
+            onPressed: () {
               setState(() {
-                _historico.insert(
-                  0,
-                  '$origem → $destino • R\$ ${valor.toStringAsFixed(2)}',
-                );
-                _pagina = 1;
+                mensagem = 'Bem-vindo ao MovePlus!';
               });
             },
+            icon: const Icon(Icons.notifications_none),
           ),
-          const CorridaPage(),
-          HistoricoPage(historico: _historico),
-          const PerfilPage(),
         ],
       ),
+      body: pagina == 0
+          ? inicio()
+          : pagina == 1
+              ? corridas()
+              : perfil(),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _pagina,
+        selectedIndex: pagina,
         onDestinationSelected: (index) {
           setState(() {
-            _pagina = index;
+            pagina = index;
+            mensagem = '';
           });
         },
         destinations: const [
@@ -78,270 +108,213 @@ class _MovePlusHomeState extends State<MovePlusHome> {
           ),
           NavigationDestination(
             icon: Icon(Icons.directions_car_outlined),
-            selectedIcon: Icon(Icons.directions_car),
-            label: 'Corrida',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.history),
-            label: 'Histórico',
+            label: 'Corridas',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
             label: 'Perfil',
           ),
         ],
       ),
     );
   }
-}
 
-class HomePage extends StatefulWidget {
-  final Function(String origem, String destino, double valor)
-      onCorridaSolicitada;
-
-  const HomePage({
-    super.key,
-    required this.onCorridaSolicitada,
-  });
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final TextEditingController _origemController =
-      TextEditingController();
-
-  final TextEditingController _destinoController =
-      TextEditingController();
-
-  final String _tipoCorrida = 'Econômica';
-
-  double _valor = 0;
-
-  void _calcularCorrida() {
-    if (_origemController.text.trim().isEmpty ||
-        _destinoController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Informe origem e destino.'),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      if (_tipoCorrida == 'Econômica') {
-        _valor = 18.50;
-      } else if (_tipoCorrida == 'Conforto') {
-        _valor = 25.90;
-      } else {
-        _valor = 34.90;
-      }
-    });
-  }
-
-  void _solicitarCorrida() {
-    if (_valor == 0) {
-      _calcularCorrida();
-      return;
-    }
-
-    widget.onCorridaSolicitada(
-      _origemController.text,
-      _destinoController.text,
-      _valor,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Corrida solicitada com sucesso!'),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _origemController.dispose();
-    _destinoController.dispose();
-    super.dispose();
-  }
-
-  Widget _campoLocal({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-  }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Colors.white,
-      ),
-    );
-  }
-
-  Widget _opcaoCorrida({
-    required String titulo,
-    required String subtitulo,
-    required double valor,
-    required IconData icone,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        leading: Icon(icone),
-        title: Text(titulo),
-        subtitle: Text(subtitulo),
-        trailing: Text('R\$ ${valor.toStringAsFixed(2)}'),
-        onTap: () {
-          setState(() {
-            _valor = valor;
-          });
-        },
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
+  Widget inicio() {
+    return ListView(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 10),
-          const Text(
-            'Para onde vamos?',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: const Color(0xFF155EEF),
+            borderRadius: BorderRadius.circular(22),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Informe os locais da sua viagem.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 25),
-          _campoLocal(
-            controller: _origemController,
-            label: 'Local de partida',
-            icon: Icons.my_location,
-          ),
-          const SizedBox(height: 15),
-          _campoLocal(
-            controller: _destinoController,
-            label: 'Destino',
-            icon: Icons.location_on,
-          ),
-          const SizedBox(height: 25),
-          const Text(
-            'Tipo de corrida',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _opcaoCorrida(
-            titulo: 'Econômica',
-            subtitulo: 'Preço mais baixo',
-            valor: 18.50,
-            icone: Icons.directions_car,
-          ),
-          _opcaoCorrida(
-            titulo: 'Conforto',
-            subtitulo: 'Mais conforto',
-            valor: 25.90,
-            icone: Icons.airline_seat_recline_normal,
-          ),
-          _opcaoCorrida(
-            titulo: 'Premium',
-            subtitulo: 'Experiência diferenciada',
-            valor: 34.90,
-            icone: Icons.star,
-          ),
-          const SizedBox(height: 20),
-          if (_valor > 0)
-            Card(
-              elevation: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Estimativa: R\$ ${_valor.toStringAsFixed(2)}', // CORRIGIDO
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: _solicitarCorrida,
-                      child: const Text('Solicitar'),
-                    ),
-                  ],
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.directions_car,
+                color: Colors.white,
+                size: 42,
+              ),
+              SizedBox(height: 14),
+              Text(
+                'Sua próxima viagem começa aqui.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 25,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
+              SizedBox(height: 8),
+              Text(
+                'Praticidade e conforto para chegar ao seu destino.',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Para onde vamos?',
+          style: TextStyle(
+            fontSize: 21,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: origemController,
+          decoration: InputDecoration(
+            labelText: 'Local de partida',
+            hintText: 'Digite seu endereço de origem',
+            prefixIcon: const Icon(Icons.my_location),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: destinoController,
+          decoration: InputDecoration(
+            labelText: 'Destino',
+            hintText: 'Para onde você quer ir?',
+            prefixIcon: const Icon(Icons.location_on_outlined),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 22),
+        const Text(
+          'Escolha seu veículo',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...[
+          ('MovePlus Econômico', 'Opção econômica', Icons.directions_car),
+          ('MovePlus Conforto', 'Mais conforto na viagem', Icons.airline_seat_recline_extra),
+          ('MovePlus Moto', 'Para trajetos de moto', Icons.two_wheeler),
+        ].map((opcao) {
+          final selecionado = veiculo == opcao.$1;
+          return Card(
+            color: selecionado ? const Color(0xFFE8EEFF) : Colors.white,
+            child: RadioListTile<String>(
+              value: opcao.$1,
+              groupValue: veiculo,
+              onChanged: (valor) {
+                setState(() {
+                  veiculo = valor!;
+                  mensagem = '';
+                });
+              },
+              secondary: Icon(
+                opcao.$3,
+                color: const Color(0xFF155EEF),
+                size: 30,
+              ),
+              title: Text(
+                opcao.$1,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(opcao.$2),
+            ),
+          );
+        }),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 54,
+          child: FilledButton.icon(
+            onPressed: solicitarCorrida,
+            icon: const Icon(Icons.search),
+            label: const Text(
+              'Solicitar corrida',
+              style: TextStyle(fontSize: 17),
+            ),
+          ),
+        ),
+        if (mensagem.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(mensagem),
+          ),
         ],
+        const SizedBox(height: 20),
+        const Text(
+          'Versão inicial demonstrativa — sem motoristas, '
+          'GPS ou pagamentos conectados.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget corridas() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.directions_car, size: 60, color: Color(0xFF155EEF)),
+            SizedBox(height: 16),
+            Text(
+              'Minhas corridas',
+              style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Suas viagens aparecerão aqui quando o sistema '
+              'de corridas estiver conectado.',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-class CorridaPage extends StatelessWidget {
-  const CorridaPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget perfil() {
     return const Center(
-      child: Text('Tela de Corrida Ativa'),
-    );
-  }
-}
-
-class HistoricoPage extends StatelessWidget {
-  final List<String> historico;
-
-  const HistoricoPage({super.key, required this.historico});
-
-  @override
-  Widget build(BuildContext context) {
-    if (historico.isEmpty) {
-      return const Center(
-        child: Text('Nenhuma corrida no histórico.'),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: historico.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          leading: const Icon(Icons.history),
-          title: Text(historico[index]),
-        );
-      },
-    );
-  }
-}
-
-class PerfilPage extends StatelessWidget {
-  const PerfilPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Perfil do Usuário'),
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 42,
+              child: Icon(Icons.person, size: 48),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Perfil do passageiro',
+              style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Em breve: cadastro, dados pessoais e configurações.',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
